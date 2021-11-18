@@ -1,6 +1,4 @@
-﻿using System.Net;
-
-namespace TechTest
+﻿namespace TechTest
 {
     class Program
     {

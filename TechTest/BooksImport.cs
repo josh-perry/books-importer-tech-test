@@ -28,6 +28,8 @@ namespace TechTest
         {
             var document = XDocument.Parse(xml);
 
+            // NOTE: Deserialize into a list of concrete Book objects instead, also handle null fields more elegantly.
+            //       If this were to get significantly larger we could consider moving this out into a mapper class.
             var books = document.Descendants("book")
                 .Select(b => new Book
                 {
@@ -43,6 +45,7 @@ namespace TechTest
 
         private void SaveBooks(IEnumerable<Book> books)
         {
+            // NOTE: This connection string should come from a config/environment variable
             using var sqlConnection = new SqlConnection("connString");
             using var sqlCommand = sqlConnection.CreateCommand();
             using var transaction = sqlConnection.BeginTransaction();
@@ -56,8 +59,13 @@ namespace TechTest
             transaction.Commit();
         }
 
+        /// <summary>
+        /// Imports a set of books into the database
+        /// </summary>
         public void Import()
         {
+            // NOTE: This URL should definitely come from a config of some kind: either passed into this class or
+            //       the config manager should be injected here and the URL fetched from that.
             var xml = DownloadBooksXml("https://www.w3schools.com/xml/books.xml");
             var books = ParseBooks(xml);
             SaveBooks(books);
