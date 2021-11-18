@@ -4,7 +4,7 @@
     {
         static void Main(string[] args)
         {
-            var booksImport = new BooksImport();
+            var booksImport = new BooksImporter();
             booksImport.Import();
         }
     }

@@ -6,7 +6,7 @@ using System.Xml.Linq;
 
 namespace TechTest
 {
-    public class BooksImport : IBooksImporter
+    public class BooksImporter : IBooksImporter
     {
         /// <summary>
         /// Download XML source data for the books from the given URL
