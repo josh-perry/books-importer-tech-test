@@ -1,4 +1,4 @@
-using System;
+using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Net;
@@ -6,44 +6,61 @@ using System.Xml.Linq;
 
 namespace TechTest
 {
-    public class BooksImport
+    public class BooksImport : IBooksImporter
     {
-        public void Import()
+        /// <summary>
+        /// Download XML source data for the books from the given URL
+        /// </summary>
+        /// <param name="url"></param>
+        /// <returns></returns>
+        private string DownloadBooksXml(string url)
         {
-            // download books xml from endpoint
-            string xml;
-            using (var client = new WebClient())
-            {
-                var url = "https://www.w3schools.com/xml/books.xml";
-                xml = client.DownloadString(url);
-            }
+            using var webClient = new WebClient();
+            return webClient.DownloadString(url);
+        }
 
-            // parse books xml to a books collection
+        /// <summary>
+        /// Retrieve a list of book objects from the supplied XML string
+        /// </summary>
+        /// <param name="xml"></param>
+        /// <returns></returns>
+        private IEnumerable<Book> ParseBooks(string xml)
+        {
             var document = XDocument.Parse(xml);
-            var books = (from b in document.Descendants("book")
-                select new
+
+            var books = document.Descendants("book")
+                .Select(b => new Book
                 {
-                    Category = b.Attribute("category").Value,
-                    Title = b.Element("title").Value,
+                    Category = b.Attribute("category")?.Value,
+                    Title = b.Element("title")?.Value,
                     Authors = b.Elements("author").Select(e => e.Value),
-                    Price = decimal.Parse(b.Element("price").Value)
+                    Price = decimal.Parse(b.Element("price")?.Value ?? string.Empty),
+                    Year = int.Parse(b.Element("year")?.Value ?? string.Empty)
                 });
 
-            // save books to the database
-            using (var conn = new SqlConnection("connString"))
-            using (var comm = conn.CreateCommand())
-            {
-                using (var trans = conn.BeginTransaction())
-                {
-                    foreach (var b in books)
-                    {
-                        // build sql or call sp to insert book
-                        comm.ExecuteNonQuery();
-                    }
+            return books.ToList();
+        }
 
-                    trans.Commit();
-                }
+        private void SaveBooks(IEnumerable<Book> books)
+        {
+            using var sqlConnection = new SqlConnection("connString");
+            using var sqlCommand = sqlConnection.CreateCommand();
+            using var transaction = sqlConnection.BeginTransaction();
+
+            foreach (var b in books)
+            {
+                // Build sql or call sp to insert book
+                sqlCommand.ExecuteNonQuery();
             }
+
+            transaction.Commit();
+        }
+
+        public void Import()
+        {
+            var xml = DownloadBooksXml("https://www.w3schools.com/xml/books.xml");
+            var books = ParseBooks(xml);
+            SaveBooks(books);
         }
     }
 }

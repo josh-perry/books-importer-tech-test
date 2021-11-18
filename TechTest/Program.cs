@@ -1,4 +1,6 @@
-﻿namespace TechTest
+﻿using System.Net;
+
+namespace TechTest
 {
     class Program
     {
